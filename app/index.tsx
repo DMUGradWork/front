@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Button } from 'react-native';
 import { useRouter } from 'expo-router';
-import ImageSplash from '../app/components/ImageSplash';
+import ImageSplash from './components/ImageSplash';
 
-export default function HomeScreen() {
-  const [loading, setLoading] = useState(false);
+export default function HomeScreen(): JSX.Element {
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-  const timeoutRef = useRef(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleNavigate = () => {
+  const handleNavigate = (): void => {
     setLoading(true);
     timeoutRef.current = setTimeout(() => {
-      router.push('/first');
+      router.push('/study');
     }, 2000);
   };
 

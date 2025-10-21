@@ -29,18 +29,23 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SyntaxHighlighter from 'react-native-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/styles/hljs';
+import { useApiBaseUrl } from './hooks/useApiBaseUrl';
+import { getAttendanceImage } from './utils/getAttendanceImage';
+import { getCategoryLabel } from './utils/getCategoryLabel';
 
-const StudyApp = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+import { ActiveScreen, ActiveChat, ParticipantCounts, Category, StudyRoom, Meeting } from './types';
+
+const StudyApp = (): JSX.Element => {
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
-  const [showSearchModal, setShowSearchModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showPicker, setShowPicker] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
-  const [participantCounts, setParticipantCounts] = useState({});
-  const [activeScreen, setActiveScreen] = useState('list'); // 'list', 'chat', 'community'
-  const [activeChat, setActiveChat] = useState({ chatRoomId: null, studyName: '', studyRoomId: null, studyRoomHostId: null });
+  const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showPicker, setShowPicker] = useState<boolean>(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [participantCounts, setParticipantCounts] = useState<ParticipantCounts>({});
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>('list');
+  const [activeChat, setActiveChat] = useState<ActiveChat>({ chatRoomId: null, studyName: '', studyRoomId: null, studyRoomHostId: null });
   // 자동 로그인/자동 userId:1 fetch 관련 코드 제거
   // 앱 시작 시 무조건 로그인 화면이 뜨도록 함
   // SplashScreen 추가 및 이동 버튼 누르면 로그인 화면으로 이동
@@ -50,14 +55,22 @@ const StudyApp = () => {
   // const initialStudyData = [...];
   // const [studyList, setStudyList] = useState(initialStudyData);
   // const [filteredStudyData, setFilteredStudyData] = useState(initialStudyData);
-  const [studyList, setStudyList] = useState([]);
-  const [filteredStudyData, setFilteredStudyData] = useState([]);
-  const [categoryList, setCategoryList] = useState([]);
-  const [meetingList, setMeetingList] = useState([]); // 실제 DB 일정 리스트
+  const [studyList, setStudyList] = useState<StudyRoom[]>([]);
+  const [filteredStudyData, setFilteredStudyData] = useState<StudyRoom[]>([]);
+  const [categoryList, setCategoryList] = useState<Category[]>([]);
+  const [meetingList, setMeetingList] = useState<Meeting[]>([]); // 실제 DB 일정 리스트
 
   // 스터디 생성 폼 상태를 useRef로 변경
   // studyFormRef의 category는 id로 저장하도록 변경
-  const studyFormRef = useRef({
+  type StudyForm = {
+    name: string;
+    category: string | number;
+    peopleCount: string;
+    imageUrl: string;
+    description: string;
+    password?: string;
+  };
+  const studyFormRef = useRef<StudyForm>({
     name: '',
     category: '', // categoryId로 사용
     peopleCount: '',
@@ -66,38 +79,16 @@ const StudyApp = () => {
   });
 
   // 검색 관련 상태를 ref로 변경 (type 고정)
-  const searchRef = useRef({
+  const searchRef = useRef<{ type: string; text: string }>({
     type: 'title',
     text: ''
   });
 
-  // 로컬 IP 자동 감지 (Expo 환경용)
-  const getLocalIP = async () => {
-    try {
-      // Expo 환경에서 로컬 IP 감지
-      const { getIpAddressAsync } = require('expo-network');
-      const ip = await getIpAddressAsync();
-      return ip || '192.168.0.41'; // fallback IP
-    } catch (error) {
-      console.log('IP 감지 실패, 기본 IP 사용:', error);
-      return '192.168.0.41'; // fallback IP
-    }
-  };
-
-  const [BASE_URL, setBASE_URL] = useState('http://192.168.0.41:8080');
-
-  // 컴포넌트 마운트 시 로컬 IP 설정
-  useEffect(() => {
-    const setLocalIP = async () => {
-      const localIP = await getLocalIP();
-      setBASE_URL(`http://${localIP}:8080`);
-      console.log('로컬 IP 설정됨:', localIP);
-    };
-    setLocalIP();
-  }, []);
+  // API Base URL (Expo 로컬 IP 자동 감지)
+  const BASE_URL = useApiBaseUrl('192.168.0.41', 8080);
 
   // 2. 목록/카테고리 fetch 함수 추가
-  const fetchStudyList = async () => {
+  const fetchStudyList = async (): Promise<void> => {
     try {
       const res = await axios.get(`${BASE_URL}/api/study`);
       let data = Array.isArray(res.data) ? res.data : [];
@@ -139,8 +130,8 @@ const StudyApp = () => {
   };
 
   // 스터디방 참여자 수를 모두 fetch
-  const fetchAllParticipantCounts = async (studyRooms) => {
-    const counts = {};
+  const fetchAllParticipantCounts = async (studyRooms: StudyRoom[]): Promise<void> => {
+    const counts: ParticipantCounts = {};
     await Promise.all(
       studyRooms.map(async (room) => {
         try {
@@ -155,7 +146,7 @@ const StudyApp = () => {
   };
 
   // 일정 fetch 함수
-  const fetchAllMeetings = async (studyRooms) => {
+  const fetchAllMeetings = async (studyRooms: StudyRoom[]): Promise<void> => {
     // studyRooms: 참여중인 방 목록
     const meetings = [];
     await Promise.all(
@@ -201,7 +192,7 @@ const StudyApp = () => {
     }
   }, [showScheduleModal]);
 
-  const closeModal = () => {
+  const closeModal = (): void => {
     setShowScheduleModal(false);
   };
 
@@ -232,7 +223,7 @@ const StudyApp = () => {
     }
   ];
 
-  const ScheduleModal = () => (
+  const ScheduleModal = (): JSX.Element => (
     <Modal
       transparent={true}
       visible={showScheduleModal}
@@ -290,7 +281,7 @@ const StudyApp = () => {
   );
 
   // 출석 잔디(Grass) 컴포넌트
-  const AttendanceGrass = ({ lastAttendanceDate, consecutiveAttendance }) => {
+  const AttendanceGrass = ({ lastAttendanceDate, consecutiveAttendance }: { lastAttendanceDate?: string | Date | null; consecutiveAttendance?: number | null }): JSX.Element => {
     const [selected, setSelected] = React.useState(null); 
     const scaleAnim = React.useRef(new Animated.Value(1)).current;
     const translateYAnim = React.useRef(new Animated.Value(0)).current;
@@ -326,7 +317,7 @@ const StudyApp = () => {
       }
     }
     // 7x7 그리드로 렌더링 (크기 40x40, borderRadius 12)
-    const handleGrassPress = (row, col, dateObj) => {
+    const handleGrassPress = (row: number, col: number, dateObj?: Date | null) => {
       setSelected({ row, col, date: dateObj });
       scaleAnim.setValue(0.7);
       translateYAnim.setValue(10);
@@ -646,7 +637,7 @@ const StudyApp = () => {
   };
 
   // CreateModal에서 카테고리 선택 UI를 categoryList 기반으로, value는 id로, label은 name으로 표시
-  const CreateModal = () => {
+  const CreateModal = (): JSX.Element => {
     const [localForm, setLocalForm] = useState({
       ...studyFormRef.current,
       category: studyFormRef.current.category || (categoryList[0]?.id || ''),
@@ -680,7 +671,7 @@ const StudyApp = () => {
       }
     };
 
-    const uploadImage = async (uri) => {
+    const uploadImage = async (uri: string) => {
       setUploading(true);
       const formData = new FormData();
       formData.append('file', {
@@ -1291,13 +1282,13 @@ const StudyApp = () => {
   };
 
   // 로그인 화면
-  const LoginScreen = () => {
+  const LoginScreen = (): JSX.Element => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleLogin = async () => {
+    const handleLogin = async (): Promise<void> => {
       setLoading(true);
       setError('');
       try {
@@ -1352,7 +1343,7 @@ const StudyApp = () => {
   };
 
   // StudyListScreen 헤더에 로그아웃 버튼 추가
-  const StudyListScreen = () => {
+  const StudyListScreen = (): JSX.Element => {
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     // StudyListScreen에서 새로고침 상태 관리
@@ -1942,41 +1933,9 @@ const StudyApp = () => {
     }
   };
 
-  // 연속 참석일에 따른 이미지 선택 함수
-  const getAttendanceImage = (days) => {
-    if (days >= 91) return require('../assets/images/fw.png');
-    if (days >= 61) return require('../assets/images/four-image.png');
-    if (days >= 31) return require('../assets/images/third-image.png');
-    if (days >= 11) return require('../assets/images/second-image.png');
-    return require('../assets/images/first_image.png');
-  };
+  // 연속 참석일에 따른 이미지 선택 함수는 utils로 이동
 
-  // 카테고리 라벨 가져오기 함수
-  const getCategoryLabel = (value) => {
-    const categories = {
-      'programming': '📚 프로그래밍 / 개발',
-      'design': '🎨 디자인',
-      'language': '🌏 외국어',
-      'job': '💼 취업 / 이직',
-      'data_science': '📊 데이터 사이언스',
-      'mobile_dev': '📱 모바일 앱 개발',
-      'game_dev': '🎮 게임 개발',
-      'security': '🔒 보안 / 네트워크',
-      'devops': '☁️ 클라우드 / DevOps',
-      'ai_ml': '🤖 AI / 머신러닝',
-      'video_editing': '🎥 영상 편집',
-      'music': '🎵 음악 / 작곡',
-      'writing': '📝 블로그 / 글쓰기',
-      'investment': '📈 주식 / 투자',
-      'reading': '📚 독서',
-      'certification': '✏️ 자격증',
-      'interview': '📋 면접 준비',
-      'language_test': '📖 어학시험',
-      'coding_test': '🎯 코딩테스트',
-      'web_dev': '🌐 웹 개발'
-    };
-    return categories[value] || "카테고리 선택";
-  };
+  // 카테고리 라벨 함수는 utils로 이동
 
   // handleVote 함수 수정: 서버에 투표 저장, 투표 현황/과반수 여부 확인
   const handleVote = async (vote) => {
@@ -2288,7 +2247,7 @@ const StudyApp = () => {
   );
 
   // 카테고리 필터 바 컴포넌트
-  const CategoryFilterBar = ({ categoryList, selectedCategory, onSelectCategory }) => (
+  const CategoryFilterBar = ({ categoryList, selectedCategory, onSelectCategory }: { categoryList: Category[]; selectedCategory: string | number; onSelectCategory: (id: string | number) => void }): JSX.Element => (
     <View style={{ backgroundColor: '#fff', paddingVertical: 4 }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 0, marginBottom: 8 }}>
         <TouchableOpacity
@@ -4202,5 +4161,3 @@ const styles = StyleSheet.create({
 });
 
 export default StudyApp;
-
-

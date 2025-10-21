@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
-export default function ImageSplash() {
+export default function ImageSplash(): JSX.Element {
   return (
     <View style={styles.container}>
       <StatusBar hidden={true} />
