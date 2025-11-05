@@ -1,25 +1,27 @@
 import { useEffect, useState } from 'react';
+import { getApiBaseUrl } from '../../config/api';
 
-export function useApiBaseUrl(defaultIp = '192.168.0.41', port = 8080) {
-  const [baseUrl, setBaseUrl] = useState(`http://${defaultIp}:${port}`);
+export function useApiBaseUrl(defaultIp = '172.16.113.138', port = 8080) {
+  const [baseUrl, setBaseUrl] = useState(() => getApiBaseUrl(port));
 
   useEffect(() => {
-    const setLocalIP = async () => {
+    const getLocalIp = async () => {
       try {
-        // Lazy require to avoid platform issues during tests/build
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { getIpAddressAsync } = require('expo-network');
-        const ip = await getIpAddressAsync();
-        const finalIp = ip || defaultIp;
-        setBaseUrl(`http://${finalIp}:${port}`);
-        console.log('로컬 IP 설정됨:', finalIp);
+        // 설정 파일에서 URL 가져오기
+        const url = getApiBaseUrl(port);
+    console.log('[useApiBaseUrl] URL 설정:', url);
+    setBaseUrl(url);
       } catch (error) {
-        console.log('IP 감지 실패, 기본 IP 사용:', error);
-        setBaseUrl(`http://${defaultIp}:${port}`);
+        console.error('[useApiBaseUrl] URL 설정 실패:', error);
+        // 실패 시 기본값 사용
+        const url = getApiBaseUrl(port);
+        console.log('[useApiBaseUrl] 기본 URL 설정:', url);
+        setBaseUrl(url);
       }
     };
-    setLocalIP();
-  }, [defaultIp, port]);
+
+    getLocalIp();
+  }, [port]);
 
   return baseUrl;
 }

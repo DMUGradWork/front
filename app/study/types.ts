@@ -1,4 +1,4 @@
-export type ActiveScreen = 'list' | 'chat' | 'community' | 'create';
+export type ActiveScreen = 'list' | 'chat' | 'chat-list' | 'community' | 'create' | 'job-detail' | 'profile' | 'notification';
 
 export type ActiveChat = {
   chatRoomId: number | null;
@@ -19,6 +19,10 @@ export type StudyRoom = {
   imageUrl?: string;
   studyRoomHostId?: number;
   lastMsg?: any;
+  description?: string;
+  hashtags?: string;
+  region?: string;
+  password?: string;
 };
 
 export type Meeting = {

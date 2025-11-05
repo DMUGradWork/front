@@ -1,0 +1,11 @@
+{
+  "apiBaseUrl": "http://192.168.0.41",
+  "devPcIp": "192.168.0.41",
+  "prodServerUrl": "https://your-production-server.com",
+  "studyServicePort": "8080",
+  "authServicePort": "8082"
+}
+
+
+
+

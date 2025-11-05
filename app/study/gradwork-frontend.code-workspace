@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../../auth-service"
+		},
+		{
+			"path": "../../../../Coding/졸업작품/study-group-service"
+		},
+		{
+			"path": "../../../../Coding/졸업작품/dating-command-service"
+		},
+		{
+			"path": "../../../../Coding/졸업작품/dating-query-service"
+		},
+		{
+			"path": "../../../../Coding/졸업작품/schedule-command-service"
+		},
+		{
+			"path": "../../../../Coding/졸업작품/schedule-query-service"
+		}
+	],
+	"settings": {}
+}

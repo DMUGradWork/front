@@ -1,36 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Button } from 'react-native';
-import { useRouter } from 'expo-router';
-import ImageSplash from './components/ImageSplash';
+import React, { useEffect, useState } from 'react';
+import { Redirect } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
-export default function HomeScreen(): JSX.Element {
-  const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleNavigate = (): void => {
-    setLoading(true);
-    timeoutRef.current = setTimeout(() => {
-      router.push('/study');
-    }, 2000);
-  };
+export default function Entry(): JSX.Element {
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
+    SecureStore.getItemAsync('auth_token')
+      .then((token) => {
+        setHasToken(!!token);
+      })
+      .catch(() => {
+        setHasToken(false);
+      });
   }, []);
 
-  if (loading) {
-    return <ImageSplash />;
+  if (hasToken === null) {
+    return null;
   }
 
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>홈 화면</Text>
-      <Button title="이동" onPress={handleNavigate} />
-    </View>
-  );
+  return <Redirect href={hasToken ? '/main' : '/login'} />;
 }

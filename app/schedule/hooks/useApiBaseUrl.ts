@@ -1,29 +1,31 @@
 import { useEffect, useState } from 'react';
+import { getScheduleServiceUrl } from '../../config/api';
 
 /**
  * Schedule 서비스용 API Base URL Hook
  * Command Service와 Query Service는 각각 다른 포트를 사용합니다.
  */
-export function useScheduleApiBaseUrl(defaultIp = '192.168.0.41') {
-  const [baseUrl, setBaseUrl] = useState(`http://${defaultIp}`);
+export function useScheduleApiBaseUrl(defaultIp = '172.16.113.138') {
+  const [baseUrl, setBaseUrl] = useState(() => getScheduleServiceUrl());
 
   useEffect(() => {
-    const setLocalIP = async () => {
+    const getLocalIp = async () => {
       try {
-        // Lazy require to avoid platform issues during tests/build
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { getIpAddressAsync } = require('expo-network');
-        const ip = await getIpAddressAsync();
-        const finalIp = ip || defaultIp;
-        setBaseUrl(`http://${finalIp}`);
-        console.log('[Schedule] 로컬 IP 설정됨:', finalIp);
+        // 설정 파일에서 URL 가져오기
+        const url = getScheduleServiceUrl();
+    console.log('[Schedule] URL 설정:', url);
+    setBaseUrl(url);
       } catch (error) {
-        console.log('[Schedule] IP 감지 실패, 기본 IP 사용:', error);
-        setBaseUrl(`http://${defaultIp}`);
+        console.error('[Schedule] URL 설정 실패:', error);
+        // 실패 시 기본값 사용
+        const url = getScheduleServiceUrl();
+        console.log('[Schedule] 기본 URL 설정:', url);
+        setBaseUrl(url);
       }
     };
-    setLocalIP();
-  }, [defaultIp]);
+
+    getLocalIp();
+  }, []);
 
   return baseUrl;
 }

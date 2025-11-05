@@ -21,7 +21,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   web_dev: '🌐 웹 개발',
 };
 
-export function getCategoryLabel(value: string) {
-  return CATEGORY_LABELS[value] || '카테고리 선택';
+export function getCategoryLabel(value: string | number, categoryList?: Array<{ id: string | number; name: string }>): string {
+  // categoryList가 제공되면 categoryList에서 찾기
+  if (categoryList && Array.isArray(categoryList)) {
+    const category = categoryList.find(cat => String(cat.id) === String(value));
+    if (category) {
+      return category.name;
+    }
+  }
+  
+  // categoryList가 없거나 찾지 못한 경우 기존 로직 사용
+  return CATEGORY_LABELS[String(value)] || '카테고리 선택';
 }
 

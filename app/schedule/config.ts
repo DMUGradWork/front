@@ -24,7 +24,7 @@ export const API_CONFIG = {
   QUERY_PORT: 8082,
 
   // 기본 IP 주소
-  DEFAULT_IP: '192.168.0.41',
+  DEFAULT_IP: '172.16.113.138',
 };
 
 /**
